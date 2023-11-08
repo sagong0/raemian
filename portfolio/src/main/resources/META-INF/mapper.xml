@@ -1,0 +1,256 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="DB">
+	<insert id="admin_insert">
+		insert into ad_membership values ('0',#{aarea},#{adept},#{aname},#{aid},password(#{apw}),#{aemail},#{atel},#{aposition},0,'Y',now())
+	</insert>
+	
+	<!-- 아이디 중복체크 -->
+	<select id="ad_idck" parameterType="String" resultType="adminDto">
+		select * from ad_membership where aid=#{aid}
+	</select>
+	<select id="ad_pwck" parameterType="Map" resultType="adminDto">
+		select * from ad_membership where aid=#{id} and apw=password(#{pw})
+	</select>
+	
+	<!-- 아이디 맞고 비번틀렸을때 count 증가 -->
+	<update id="upTryCount" parameterType="Map">
+		update ad_membership 
+		<choose>
+			<when test="part=='upTryCount'">
+			set try_count=try_count+1 where aid=#{id}				
+			</when>
+			<when test="part=='setZeroTry'">
+			set try_count=0 where aid=#{id}
+			</when>
+		</choose>
+		
+		
+	</update>
+	
+	
+	<update id="setUse" parameterType="String">
+		update ad_membership set ause='N' where aid=#{aid}
+	</update>
+	
+	
+	
+	
+	<!-- 관리자 리스트 10개씩 출력 -->
+	<select id="getAdminAll" parameterType="int" resultType="adminDto">
+		select * from ad_membership order by aidx desc limit #{no},10
+	</select>
+	
+	<!-- 관리자 리스트 총 COUNT -->
+	<select id="countAllAdmin" parameterType="string" resultType="int">
+		select count(*) as ct from ad_membership
+	</select>
+	
+	<!-- area에 의한 count -->
+	<select id="countAdminByArea" parameterType="String" resultType="int">
+		select count(*) from ad_membership where aarea like concat('%',#{aarea},'%')
+	</select> 
+	
+	<!-- 검색어 필터링 count -->
+	<select id="countAdminBySearch" parameterType="Map" resultType="int">
+		select count(*) from ad_membership
+		<choose>
+			<when test="part=='name'">
+				<where>
+				aname like concat('%',#{data},'%')
+				</where>
+			</when>
+			<when test="part=='tell'">
+				<where>
+				atel like concat('%',#{data},'%')
+				</where>
+			</when>
+			<when test="part=='id'">
+				<where>
+				aid like concat('%',#{data},'%')
+				</where>
+			</when>
+		</choose>
+	</select>
+	
+	<!-- 소속에 해당하는 관리자 리스트 출력. -->
+	<select id="getAdminByArea" resultType="adminDto">
+		select * from ad_membership where aarea=#{aarea}
+	</select>
+	
+	<!-- 소속:전체 + 아이디 검색 PART-->  
+	<select id="getAdminByID" parameterType="String" resultType="adminDto">
+		select * from ad_membership where aid like concat('%',#{aid},'%') order by aidx desc
+	</select>
+	
+	<!-- 소속:전체 + 연락처 검색 PART -->  
+	<select id="getAdminByTell" parameterType="String" resultType="adminDto">
+		select * from ad_membership where atel like concat('%',#{atel},'%') order by aidx desc
+	</select>
+	
+	<!-- 소속:전체 + 이름 검색 PART --> 
+	<select id="getAdminByName" parameterType="String" resultType="adminDto">
+		select * from ad_membership where aname like concat('%',#{aname},'%') order by aidx desc
+	</select>
+	
+	<!-- 근무중, 퇴직중 업데이트 PART -->
+	<update id="updateStatusY">
+		update ad_membership set ause='Y' where aidx=#{aidx}
+	</update>
+	<update id="updateStatusN">
+		update ad_membership set ause='N' where aidx=#{aidx}
+	</update>
+	
+	
+	
+	<!-- *************************** 공지사항 PART ************************************** -->
+	
+	<!-- 글쓰기 저장 -->
+	<insert id="saveNotice">
+		insert into notice values('0',#{ntitle},#{nwriter},#{ncontent},#{nfile},#{ncount},now())
+	</insert>
+	
+	<!-- 공지사항 출력 -->
+	<select id="getNotice" resultType="noticeDto">
+		select * from notice order by nidx desc	limit #{no},10
+	</select>
+
+	<!-- 검색어로 공지사항 출력 -->
+	<select id="getNoticeBySearch" resultType="noticeDto">
+		select * from notice where ntitle like concat('%',#{ntitle},'%') order by nidx desc
+	</select>
+	
+	<!-- 게시물 디테일 PART -->
+	<select id="getNoticeByIdx" resultType="noticeDto">
+		select * from notice where nidx=#{nidx}
+	</select>
+	
+	<!-- 게시물 총 갯수 -->
+	<select id="noticeEa" parameterType="Map" resultType="int">
+		select count(*) as cnt from notice 
+		<choose>
+			<when test="part=='yesSearch'">
+				<where>
+				ntitle like concat('%',#{searchVal},'%')
+				</where>
+			</when>
+		</choose>
+	</select>
+	
+	<!-- 첨부파일 명 출력 -->
+	<select id="getDbFileNm" resultType="String">
+		select nfile from notice where nidx=#{idx}
+	</select>
+
+	<!-- 조회수 카운트 ++ -->
+	<update id="countUp">
+		update notice set ncount = ncount+1 where nidx=#{nidx}
+	</update>
+	
+	<!-- 공지 게시물 삭제 -->
+	<delete id="delNotice">
+		delete from notice where nidx=#{nidx}
+	</delete>
+	
+	<!-- 공지사항 메인 페이지에 출력 -->
+	<select id="getNoticeToMain" parameterType="Map" resultType="noticeDto">
+	select * from notice 
+	<choose>
+		<when test="part=='oksearch'">
+			<where>
+			ntitle like concat('%',#{searchVal},'%')
+			</where>
+		</when>
+	</choose>
+	order by nidx desc limit #{pNo},10
+	</select>
+	
+	
+	
+	<!-- ********************** FAQ PART ****************************** -->
+	<!-- faq 출력 -->
+	<select id="getFaqList" parameterType="Map" resultType="portfolio.FaQdto">
+		select * from faq
+		<where>
+			<if test="part=='yes'">
+			fquestion like concat ('%',#{search},'%') or fanswer like concat('%',#{search},'%')
+			</if>
+		</where>
+		order by fidx desc limit #{fidx},10
+	</select>
+	
+	<!-- faq 갯수 카운팅 -->
+	<select id="countFAQ" parameterType="Map" resultType="int">
+	select count(*) from faq
+		<where>
+			<if test="part=='yes'">
+				fquestion like concat ('%',#{search},'%') or fanswer like concat('%',#{search},'%')
+			</if>
+		</where>
+	</select>
+	
+	<!-- faq 삭제 -->
+	<delete id="del_faq">
+		delete from faq where fidx=#{fidx}
+	</delete>
+	
+	<!-- FAQ 등록 -->
+	<insert id="write_faq" parameterType="portfolio.FaQdto">
+		insert into faq values('0',#{fquestion},#{fanswer},#{fwriter},now())
+	</insert>
+	
+	<!-- FAQ 전체 Main에 출력 -->
+	<select id="getAllFaqs" resultType="portfolio.FaQdto">
+	select * from faq order by fidx desc
+	</select>
+	
+	
+	
+	
+	
+	<!-- ****************** 환경 설정 Part **********************  -->
+	
+	<!-- 환경설정 저장 -->
+	<insert id="insert_info" parameterType="portfolio.ConfigDTO">
+	insert into admin_config values('0',#{atype},#{awriter},#{aprivate},#{apublic},#{aetcpublic},#{acontractSize},#{aimgUrl},#{ause},#{aorder},now())
+	</insert>
+	
+	<!-- 환경설정 정보 출력 -->
+	<select id="getInfos" parameterType="Map" resultType="portfolio.ConfigDTO">
+	select * from admin_config 
+	<choose>
+		<when test="part=='yesSearch'">
+			<where>
+			aprivate like concat('%',#{searchVal},'%')
+			</where>
+		</when>
+	</choose>
+	order by aidx desc
+	</select>
+	
+	
+	<!-- 환경설정 정보 카운팅 -->
+	<select id="countInfos" parameterType="Map" resultType="int">
+	select count(*) from admin_config
+	<choose>
+		<when test="part=='ea'">
+			<where>
+			aprivate like concat('%',#{search},'%')
+			</where>
+		</when>
+	</choose>
+	</select>
+	
+	<select id="getTypeInfos" resultType="portfolio.ConfigDTO">
+	select * from admin_config where ause='O' order by aorder asc
+	</select>
+	
+</mapper>
+
+
+
+
+
+
+

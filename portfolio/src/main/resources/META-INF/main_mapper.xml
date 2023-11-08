@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="mainPageDB">
+
+	<!-- id 중복체크 확인 -->
+	<select id="getIdck" resultType="main.MemberDto">
+		select * from join_member where mid = #{id}
+	</select>
+	
+	<insert id="insertMember">
+		insert into join_member values ('0',#{mname},#{mid},password(#{mpw}),#{mtel},#{memail},#{mzipcode},#{mstreetaddr},#{mdetailaddr},#{ckemail},#{cktel},#{ckaddr},#{cksms},now(),'O')
+	</insert>
+	
+	<select id="checkUser" parameterType="Map" resultType="main.MemberDto">
+		select * from join_member 
+		<choose>
+			<when test="part=='idck'">
+				<where>
+				mid = #{userid}
+				</where>
+			</when>
+			<when test="part=='idpwck'">
+				<where>
+				mid = #{id} and mpw=password(#{pass})
+				</where>
+			</when>
+		</choose>
+	</select>
+	
+	<!-- 회원 유저 출력 -->
+	<select id="getUsers" parameterType="Map" resultType="main.MemberDto">
+	select * from join_member
+		<choose>
+			<when test="part=='id'">
+				<where>
+				mid like concat('%',#{searchVal},'%')
+				</where>
+			</when>
+			<when test="part=='name'">
+				<where>
+				mname like concat('%',#{searchVal},'%')
+				</where>
+			</when>
+			<when test="part=='tel'">
+				<where>
+				mtel like concat('%',#{searchVal},'%')
+				</where>
+			</when>
+		</choose>
+	 	order by midx desc limit #{page},20
+	</select>
+	
+	<!-- 회원 유저 카운트 -->
+	<select id="countUsers" parameterType="Map" resultType="int">
+	select count(*) from join_member 
+		<choose>
+			<when test="part=='id'">
+				<where>
+				mid like concat('%',#{searchVal},'%')
+				</where>
+			</when>
+			<when test="part=='name'">
+				<where>
+				mname like concat('%',#{searchVal},'%')
+				</where>
+			</when>
+			<when test="part=='tel'">
+				<where>
+				mtel like concat('%',#{searchVal},'%')
+				</where>
+			</when>
+		</choose>
+	</select>
+	
+	<!-- 유저 삭제 -->
+	<delete id="delUser">
+	delete from join_member where midx=#{idx}
+	</delete>
+	
+	<!-- 당일 가입 회원 출력 -->
+	<select id="getTodayUsers" parameterType="Map" resultType="main.MemberDto">
+	select * from join_member
+		<choose>
+			<when test="part=='getdates'">
+				<where>
+				mindate like concat('%',#{dates},'%')
+				</where>
+			</when>
+		</choose>
+	</select>
+	
+	
+	<!-- 예약 정보 저장 -->
+	<insert id="insertReserve" parameterType="main.ReserveDto">
+	insert into reservation values('0',#{rid},#{rname},#{rdate},#{rtime},#{rtel},#{rcount},1)
+	</insert>
+	
+	<!-- 예약 정보 확인 -->
+	<select id="ckReserve" parameterType="main.ReserveDto" resultType="main.ReserveDto">
+	select * from reservation where rid=#{rid}
+	</select>
+	
+	<!-- 예약 수정 -->
+	<update id="update_reserve" parameterType="main.ReserveDto">
+	update reservation set rid=#{rid},rname=#{rname},rdate=#{rdate},rtime=#{rtime},rtel=#{rtel},rcount=#{rcount},rchance=1
+	where ridx=#{ridx}
+	</update>
+	
+	<!-- 예약 찬스 차감 -->
+	<update id="set_chance">
+	update reservation set rchance=rchance-1 where ridx=#{rdix}
+	</update>
+	
+	<!-- 예약 삭제 -->
+	<delete id="del_reserve">
+	delete from reservation where ridx=#{ridx}
+	</delete>
+	
+	<select id="getReserves" parameterType="Map" resultType="main.ReserveDto">
+	select * from reservation 
+	<choose>
+		<when test="part=='byId'">
+			<where>
+			rid like concat ('%',#{searchVal},'%')
+			</where>
+		</when>
+		<when test="part=='byName'">
+			<where>
+			rname like concat ('%',#{searchVal},'%')
+			</where>
+		</when>
+		<when test="part=='byTel'">
+			<where>
+			rtel like concat ('%',#{searchVal},'%')
+			</where>
+		</when>
+		
+		<when test="part=='getToday'">
+			<where>
+			rdate like concat('%',#{dates},'%')
+			</where>
+		</when>
+		
+	</choose>
+	order by ridx desc limit 0,30
+	</select>
+	
+</mapper>
+
+
+
+
+
+
+
